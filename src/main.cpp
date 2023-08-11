@@ -56,6 +56,8 @@ void loop()
   lcd.print(ibatt);
   lcd.clear();
   
+  lcd.backlight(); // test feature
+
   masuk.readRightTools(thr);
   masuk.readLeftTools(thl);
   masuk.readCam(cam);
