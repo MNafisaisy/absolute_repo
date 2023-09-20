@@ -19,55 +19,69 @@ Input masuk;
 void setup()
 {
   Serial.begin(9600);
+  Serial2.begin(115200);
   lcd.init();
   lcd.backlight();
+  pinMode(18, OUTPUT);
+  pinMode(5, OUTPUT);  
+  pinMode(34, INPUT); // con
+  pinMode(35, INPUT); // dump
+
+  pinMode(15, INPUT); // right
+  pinMode(12, INPUT); // left
+  pinMode(13, INPUT); // cam
+  digitalWrite(18, LOW);
+  digitalWrite(5, LOW);
 }
 
 void loop()
 {
-  status();     // Initialize
+  //status();     // Initialize
   
   /* Parse input from Car RATS */
-  String nemuSerial = "";
-  while (Serial.available())
-  {
-    char receivedChar = Serial.read();
-    if (receivedChar == '\n' || receivedChar == '\r')
-    {
-      break; // Terminate the string when a newline or carriage return is received
-    }
-    nemuSerial += receivedChar;
-  }
-  parseNafis(nemuSerial);
+  // String nemuSerial = "";
+  // while (Serial.available())
+  // {
+  //   char receivedChar = Serial.read();
+  //   nemuSerial += receivedChar;
+  // }
+  // parseNafis(nemuSerial);
 
-  lcd.setCursor(0, 0);
-  lcd.print("s: ");
-  lcd.setCursor(3, 0);
-  lcd.print(stat);
+  // lcd.setCursor(0, 0);
+  // lcd.print("s: ");
+  // lcd.setCursor(3, 0);
+  // lcd.print(stat);
 
-  lcd.setCursor(0, 1);
-  lcd.print("t: ");
-  lcd.setCursor(3, 1);
-  lcd.print(ifull);
+  // lcd.setCursor(0, 1);
+  // lcd.print("t: ");
+  // lcd.setCursor(3, 1);
+  // lcd.print(ifull);
 
-  lcd.setCursor(6, 0);
-  lcd.print("battery :");
-  lcd.setCursor(6, 1);
-  lcd.print(ibatt);
-  lcd.clear();
+  // lcd.setCursor(6, 0);
+  // lcd.print("battery :");
+  // lcd.setCursor(6, 1);
+  // lcd.print(ibatt);
+  // lcd.clear();
   
-  lcd.backlight(); // test feature
+  // lcd.backlight(); // test feature
 
   masuk.readRightTools(thr);
   masuk.readLeftTools(thl);
   masuk.readCam(cam);
-  masuk.readSr(sr);
-  masuk.readSl(sl);
+  // masuk.readSr(sr);
+  // masuk.readSl(sl);
   masuk.readCon(con);
+  // con ? Serial.println("HIGH CON") : Serial.println("LOW CON");
   masuk.readDump(dump);
-  
+  // dump ? Serial.println("HIGH DUMP") : Serial.println("LOW DUMP");
+
   snprintf(output, sizeof(output), "%d", "%d", "%d", "%s", "%s", "%s", "%s", "%s", thr, thl, cam, sr, sl, con, dump, stat);
-  Serial.print(output);
+  Serial.print(thr); Serial.print("         ");
+  Serial.print(thl); Serial.print("         ");
+  Serial.print(cam); Serial.print("         ");
+  Serial.print(con); Serial.print("         ");
+  Serial.print(dump); Serial.println("         ");
+  delay(1000);
 }
 
 void parseData(String conveyer, String dump, String batt, String full) {
