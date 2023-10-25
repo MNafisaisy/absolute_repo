@@ -1,117 +1,102 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
 #include "remote.h"
+#include "telemetry.h"
 
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-
-char output[256];
-char parsingan[256];
-String stat, ifull;
-int thr, thl, cam, itungan;
-bool dump, con, full, sr, sl;
-float ibatt;
-
-void parseNafis(String nemuSerial);
-void status();
+Telemetry tele;
 Input masuk;
+
+void initialization();
 
 void setup()
 {
-  Serial.begin(9600);
-  Serial2.begin(115200);
-  lcd.init();
-  lcd.backlight();
+  Serial.begin(57600);
+  Serial2.begin(57600);
+  tele.begin();
+
   pinMode(18, OUTPUT);
   pinMode(5, OUTPUT);  
   pinMode(34, INPUT); // con
   pinMode(35, INPUT); // dump
-
   pinMode(15, INPUT); // right
   pinMode(12, INPUT); // left
-  pinMode(13, INPUT); // cam
+  pinMode(2, OUTPUT);
+  // pinMode(13, INPUT); // cam
+
   digitalWrite(18, LOW);
   digitalWrite(5, LOW);
 }
 
+unsigned long previousTime1 = 0;  // Store the previous time
+unsigned long previousTime2 = 0;  // Store the previous time
+const int interval1 = 1000; // Interval for Task 1 (1 second)
+const int interval2 = 100; // Interval for Task 2 (0.1 seconds)
+bool isReceive = 0;
+bool trade = 1;
+
 void loop()
 {
   //status();     // Initialize
-  
-  /* Parse input from Car RATS */
-  // String nemuSerial = "";
-  // while (Serial.available())
-  // {
-  //   char receivedChar = Serial.read();
-  //   nemuSerial += receivedChar;
-  // }
-  // parseNafis(nemuSerial);
 
-  // lcd.setCursor(0, 0);
-  // lcd.print("s: ");
-  // lcd.setCursor(3, 0);
-  // lcd.print(stat);
+  unsigned long currentTime = millis();
+  unsigned long currentTime1 = millis();
+  if (currentTime - previousTime1 >= interval1) {
+    int throttleRight;
+    masuk.readRightTools(throttleRight);
 
-  // lcd.setCursor(0, 1);
-  // lcd.print("t: ");
-  // lcd.setCursor(3, 1);
-  // lcd.print(ifull);
+    int throttleLeft;
+    masuk.readLeftTools(throttleLeft);
 
-  // lcd.setCursor(6, 0);
-  // lcd.print("battery :");
-  // lcd.setCursor(6, 1);
-  // lcd.print(ibatt);
-  // lcd.clear();
-  
-  // lcd.backlight(); // test feature
+    int cameraAngle;
+    masuk.readCam(cameraAngle);
 
-  masuk.readRightTools(thr);
-  masuk.readLeftTools(thl);
-  masuk.readCam(cam);
-  // masuk.readSr(sr);
-  // masuk.readSl(sl);
-  masuk.readCon(con);
-  // con ? Serial.println("HIGH CON") : Serial.println("LOW CON");
-  masuk.readDump(dump);
-  // dump ? Serial.println("HIGH DUMP") : Serial.println("LOW DUMP");
+    bool signalLeft;
+    masuk.readSr(signalLeft);
+    String convertSignalLeft = signalLeft ? "ON" : "OFF"; 
 
-  snprintf(output, sizeof(output), "%d", "%d", "%d", "%s", "%s", "%s", "%s", "%s", thr, thl, cam, sr, sl, con, dump, stat);
-  Serial.print(thr); Serial.print("         ");
-  Serial.print(thl); Serial.print("         ");
-  Serial.print(cam); Serial.print("         ");
-  Serial.print(con); Serial.print("         ");
-  Serial.print(dump); Serial.println("         ");
-  delay(1000);
-}
+    bool signalRight;
+    masuk.readSl(signalRight);
+    String convertSignalRight = signalRight ? "ON" : "OFF"; 
 
-void parseData(String conveyer, String dump, String batt, String full) {
-  ifull = full;
-  ibatt = batt.toFloat();
+    bool conveyerIsON;
+    masuk.readCon(conveyerIsON);
+    String convertConveyer = conveyerIsON ? "ON" : "OFF"; 
 
-  full = ifull == "ON" ? true : false;
-}
+    bool conveyerIsOFF;
+    masuk.readDump(conveyerIsOFF);
+    String convertConveyer2 = conveyerIsOFF ? "ON" : "OFF"; 
 
-void parseNafis(String nemuSerial)
-{
-  int itungkata = 0;
-  String hasilBaca[256];
+    char output[255];
+    memset(output, 0, sizeof(output));
+    snprintf(output, sizeof(output), 
+            "%03d,%03d," 
+            "%s,%s,%s," 
+            "%03d,%s", 
 
-  for (int counter = 0; counter <= nemuSerial.length(); counter++)
-  {
-    if (parsingan[counter] != ',')
-    {
-      hasilBaca[itungkata] += parsingan[counter];
-      hasilBaca[itungkata].trim();
-    }
-    else
-    {
-      itungkata++;
-    }
+            throttleLeft, throttleRight, 
+            convertConveyer.c_str(), convertSignalLeft.c_str(), convertSignalRight.c_str(), 
+            cameraAngle, convertConveyer2.c_str()
+            );
+    // char output[256] = "2123,2023,OFF,OFF,ON,453,OFF";
+    Serial.println(output);
+    Serial2.println(output);
+    previousTime1 = currentTime;  // Update the previous time for Task 1
   }
-  parseData(hasilBaca[0],hasilBaca[1],hasilBaca[2],hasilBaca[3]);
+  
+  // if (currentTime1 - previousTime2 >= interval2) {
+  //   /* Parse input from Car RATS */
+  //   String data = tele.fetchData(Serial2, isReceive);
+  //   if(isReceive) {
+  //     Serial.println(data);
+  //     tele.parseData(data);
+  //     digitalWrite(2, trade);
+  //     trade = !trade;
+  //   }
+  //   previousTime2 = currentTime1;  // Update the previous time for Task 2
+  // }
 }
 
-void status()
+void initialization()
 {
   String kirim = "TURN ON RATS CAR";
   String terima = "";
@@ -128,6 +113,6 @@ void status()
   }
   if (terima != "RATS IS ON")
   {
-    status();
+    initialization();
   }
 }
