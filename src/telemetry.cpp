@@ -43,7 +43,7 @@ void Telemetry::parseData(String data)
 
 void Telemetry::listCommand(String battery, String isTurnLeft, String isTurnRight, String trash)
 {
-    lcd.showStatusBattery(battery.toInt());
-    isTurnLeft == "YES" ? lcd.showStatusDirection(isTurnLeft) : lcd.showStatusDirection(isTurnRight); 
-    lcd.showStatusTrash(trash);  
+    // lcd.showStatusBattery(battery.toFloat());
+    // isTurnLeft == "YES" ? lcd.showStatusDirection(isTurnLeft) : lcd.showStatusDirection(isTurnRight); 
+    // lcd.showStatusTrash(trash);  
 }

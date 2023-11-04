@@ -30,17 +30,31 @@ void setup()
 unsigned long previousTime1 = 0;  // Store the previous time
 unsigned long previousTime2 = 0;  // Store the previous time
 const int interval1 = 1000; // Interval for Task 1 (1 second)
-const int interval2 = 100; // Interval for Task 2 (0.1 seconds)
+const int interval2 = 20; // Interval for Task 2 (0.1 seconds)
 bool isReceive = 0;
-bool trade = 1;
+bool trade = false;
 
 void loop()
 {
+  trade = false;
   //status();     // Initialize
-
   unsigned long currentTime = millis();
   unsigned long currentTime1 = millis();
-  if (currentTime - previousTime1 >= interval1) {
+
+  if (currentTime1 - previousTime2 >= interval2) {
+    isReceive = false;
+    /* Parse input from Car RATS */
+    String data = tele.fetchData(Serial2, isReceive);
+    if(isReceive) {
+      if (data!="") Serial.println(data);
+      tele.parseData(data);
+    }
+    trade = true;
+    Serial2.flush();
+    previousTime2 = currentTime1;  // Update the previous time for Task 2
+  }
+
+  if ((currentTime - previousTime1 >= interval1) && !trade) {
     int throttleRight;
     masuk.readRightTools(throttleRight);
 
@@ -52,19 +66,19 @@ void loop()
 
     bool signalLeft;
     masuk.readSr(signalLeft);
-    String convertSignalLeft = signalLeft ? "ON" : "OFF"; 
+    String convertSignalLeft = signalLeft ? "N" : "F"; 
 
     bool signalRight;
     masuk.readSl(signalRight);
-    String convertSignalRight = signalRight ? "ON" : "OFF"; 
+    String convertSignalRight = signalRight ? "N" : "F"; 
 
     bool conveyerIsON;
     masuk.readCon(conveyerIsON);
-    String convertConveyer = conveyerIsON ? "ON" : "OFF"; 
+    String convertConveyer = conveyerIsON ? "N" : "F"; 
 
     bool conveyerIsOFF;
     masuk.readDump(conveyerIsOFF);
-    String convertConveyer2 = conveyerIsOFF ? "ON" : "OFF"; 
+    String convertConveyer2 = conveyerIsOFF ? "N" : "F"; 
 
     char output[255];
     memset(output, 0, sizeof(output));
@@ -77,23 +91,10 @@ void loop()
             convertConveyer.c_str(), convertSignalLeft.c_str(), convertSignalRight.c_str(), 
             cameraAngle, convertConveyer2.c_str()
             );
-    // char output[256] = "2123,2023,OFF,OFF,ON,453,OFF";
     Serial.println(output);
     Serial2.println(output);
     previousTime1 = currentTime;  // Update the previous time for Task 1
   }
-  
-  // if (currentTime1 - previousTime2 >= interval2) {
-  //   /* Parse input from Car RATS */
-  //   String data = tele.fetchData(Serial2, isReceive);
-  //   if(isReceive) {
-  //     Serial.println(data);
-  //     tele.parseData(data);
-  //     digitalWrite(2, trade);
-  //     trade = !trade;
-  //   }
-  //   previousTime2 = currentTime1;  // Update the previous time for Task 2
-  // }
 }
 
 void initialization()
